@@ -225,7 +225,7 @@ export const INITIAL_PRODUCTS = [
     reviewsCount: 89,
     weight: '400g (80 Servings)',
     flavors: ['Unflavored'],
-    image: 'https://images.unsplash.com/photo-1546483875-ad9014c88eba?auto=format&fit=crop&w=700&q=80',
+    image: '/products/muscletech-platinum-creatine.avif',
     description: 'Ultra-pure HPLC-tested micronized creatine. Clinically shown to build 6 lbs of lean muscle in 6 weeks.',
     supplementFacts: {
       servingSize: '5g',
@@ -251,7 +251,7 @@ export const INITIAL_PRODUCTS = [
     reviewsCount: 54,
     weight: '120 Veggie Caps',
     flavors: ['Capsule Form'],
-    image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=700&q=80',
+    image: '/products/applied-nutrition-creatine-3000-capsules.webp',
     description: 'Halal certified, easy-to-swallow vegan plant capsules delivering 3000mg of Micronized Creatine per serving.',
     supplementFacts: {
       servingSize: '4 Capsules',
@@ -277,7 +277,7 @@ export const INITIAL_PRODUCTS = [
     reviewsCount: 128,
     weight: '500g (100 Servings)',
     flavors: ['Unflavored', 'Blue Raspberry'],
-    image: 'https://images.unsplash.com/photo-1593095948071-474c5cc2989d?auto=format&fit=crop&w=700&q=80',
+    image: '/products/nutricost-creatine-monohydrate.webp',
     description: 'Ultra-clean, high-grade 5000mg pure Micronized Creatine Monohydrate per serving. Non-GMO, gluten-free, third-party lab tested.',
     supplementFacts: {
       servingSize: '5g (1 Scoop)',
@@ -303,7 +303,7 @@ export const INITIAL_PRODUCTS = [
     reviewsCount: 72,
     weight: '400g (80 Servings)',
     flavors: ['Unflavored'],
-    image: 'https://images.unsplash.com/photo-1579722820308-d74e571900a9?auto=format&fit=crop&w=700&q=80',
+    image: '/products/allmax-pure-micronized-creatine.webp',
     description: 'Pharmaceutical-grade German CREAPURE technology. Microparticulate technology ensuring maximum dissolution and muscle absorption.',
     supplementFacts: {
       servingSize: '5g',
@@ -330,7 +330,7 @@ export const INITIAL_PRODUCTS = [
     reviewsCount: 284,
     weight: '390g (60 Servings)',
     flavors: ['Icy Blue Razz', 'Fruit Punch', 'Watermelon', 'Orange Burst'],
-    image: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=700&q=80',
+    image: '/products/cellucor-c4-original-pre-workout.webp',
     description: 'America’s #1 selling pre-workout with 150mg caffeine, CarnoSyn Beta-Alanine, and patented TeaCrine for explosive energy & pumps.',
     supplementFacts: {
       servingSize: '6.5g (1 Scoop)',
@@ -357,7 +357,7 @@ export const INITIAL_PRODUCTS = [
     reviewsCount: 198,
     weight: '315g (30 Servings)',
     flavors: ['Energy Flavour', 'Sour Gummy Bear', 'Blue Lagoon', 'Gin & Tonic'],
-    image: 'https://images.unsplash.com/photo-1549476464-37392f717541?auto=format&fit=crop&w=700&q=80',
+    image: '/products/applied-nutrition-abe-extreme.webp',
     description: 'The UK’s best-selling pre-workout formula delivering 200mg Caffeine, 3.25g Tri-Creatine, 4g Citrulline Malate and patented Dynamine.',
     supplementFacts: {
       servingSize: '10.5g',
@@ -384,7 +384,7 @@ export const INITIAL_PRODUCTS = [
     reviewsCount: 76,
     weight: '272g (30 Servings)',
     flavors: ['Strawberry Limeade', 'Icy Rocket Freeze'],
-    image: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=700&q=80',
+    image: '/products/muscletech-vapor-x5-ripped-neuro.jpg',
     description: '5-in-1 pre-workout matrix with neuro-sensory focus compounds, Nitrosigine for skin-splitting pumps, and L-Carnitine for fat burning.',
     supplementFacts: {
       servingSize: '9g',
@@ -411,7 +411,7 @@ export const INITIAL_PRODUCTS = [
     reviewsCount: 187,
     weight: '441g (30 Servings)',
     flavors: ['Blue Coconut', 'Sour Gummy Bear', 'Tiger’s Blood'],
-    image: 'https://images.unsplash.com/photo-1549476464-37392f717541?auto=format&fit=crop&w=700&q=80',
+    image: '/products/redcon1-total-war-pre-workout.webp',
     description: 'Award-winning military grade pre-workout packed with 320mg active caffeine, 6g Citrulline Malate, and 3.2g Beta Alanine for intense combat readiness.',
     supplementFacts: {
       servingSize: '14.7g',

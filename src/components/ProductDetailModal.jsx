@@ -53,7 +53,9 @@ export default function ProductDetailModal() {
                 <img
                   src={selectedProduct.image}
                   alt={selectedProduct.name}
-                  className="w-full h-full object-contain p-4"
+                  className={`w-full h-full object-contain ${
+                    selectedProduct.id === 'prod-pw-1' ? 'scale-[1.15]' : 'p-4'
+                  }`}
                 />
               ) : (
                 <Package className="absolute inset-0 m-auto w-20 h-20 text-slate-300" aria-label="No product image" />
@@ -246,4 +248,3 @@ export default function ProductDetailModal() {
     </div>
   );
 }
-
