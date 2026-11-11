@@ -49,7 +49,10 @@ export function StoreProvider({ children }) {
           return savedProducts.map(product => {
             const initialProduct = INITIAL_PRODUCTS.find(initial => initial.id === product.id);
             const isPreviousVaporX5Image = product.id === 'prod-pw-3'
-              && product.image === '/products/muscletech-vapor-x5-ripped-neuro.jpg';
+              && [
+                '/products/muscletech-vapor-x5-ripped-neuro.jpg',
+                '/products/muscletech-vapor-x5-ripped-neuro-product.jpg'
+              ].includes(product.image);
             return initialProduct && (
               product.image === LEGACY_PRODUCT_IMAGES[product.id] || isPreviousVaporX5Image
             )

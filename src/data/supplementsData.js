@@ -384,7 +384,7 @@ export const INITIAL_PRODUCTS = [
     reviewsCount: 76,
     weight: '272g (30 Servings)',
     flavors: ['Strawberry Limeade', 'Icy Rocket Freeze'],
-    image: '/products/muscletech-vapor-x5-ripped-neuro-product.jpg',
+    image: '/products/muscletech-vapor-x5-ripped-neuro-product.png',
     description: '5-in-1 pre-workout matrix with neuro-sensory focus compounds, Nitrosigine for skin-splitting pumps, and L-Carnitine for fat burning.',
     supplementFacts: {
       servingSize: '9g',
