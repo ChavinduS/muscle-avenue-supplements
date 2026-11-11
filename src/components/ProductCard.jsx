@@ -82,7 +82,11 @@ export default function ProductCard({ product }) {
             src={product.image}
             alt={product.name}
             className={`w-full h-full object-contain rounded-xl transition-transform duration-500 ${
-              product.id === 'prod-pw-1' ? 'scale-[1.2]' : 'p-2 group-hover:scale-105'
+              product.id === 'prod-pw-1'
+                ? 'scale-[1.2]'
+                : product.id === 'prod-pw-3'
+                  ? 'group-hover:scale-105'
+                  : 'p-2 group-hover:scale-105'
             }`}
             loading="lazy"
           />

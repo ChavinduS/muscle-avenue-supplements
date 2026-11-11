@@ -54,7 +54,11 @@ export default function ProductDetailModal() {
                   src={selectedProduct.image}
                   alt={selectedProduct.name}
                   className={`w-full h-full object-contain ${
-                    selectedProduct.id === 'prod-pw-1' ? 'scale-[1.15]' : 'p-4'
+                    selectedProduct.id === 'prod-pw-1'
+                      ? 'scale-[1.15]'
+                      : selectedProduct.id === 'prod-pw-3'
+                        ? ''
+                        : 'p-4'
                   }`}
                 />
               ) : (
