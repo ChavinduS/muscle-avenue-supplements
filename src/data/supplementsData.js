@@ -173,7 +173,7 @@ export const INITIAL_PRODUCTS = [
     reviewsCount: 142,
     weight: '250g (83 Servings)',
     flavors: ['Unflavored', 'Fruit Punch', 'Green Apple'],
-    image: 'https://images.unsplash.com/photo-1593095948071-474c5cc2989d?auto=format&fit=crop&w=700&q=80',
+    image: '/products/wellcore-micronized-creatine.jpg',
     description: '100% Pure Creapure-grade micronized creatine monohydrate. Unmatched solubility, zero bloating, accelerates ATP replenishment for maximal heavy lifts.',
     supplementFacts: {
       servingSize: '3g (1 Scoop)',
@@ -199,7 +199,7 @@ export const INITIAL_PRODUCTS = [
     reviewsCount: 310,
     weight: '300g (60 Servings)',
     flavors: ['Unflavored'],
-    image: 'https://images.unsplash.com/photo-1579722820308-d74e571900a9?auto=format&fit=crop&w=700&q=80',
+    image: '/products/optimum-nutrition-micronized-creatine.webp',
     description: 'Gold standard 5g of pure Creapure creatine monohydrate per scoop. Certified Informed-Choice tested for banned substances.',
     supplementFacts: {
       servingSize: '5.25g',

@@ -1,64 +1,101 @@
-﻿import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStore } from '../context/StoreContext';
-import { X, User, Mail, Lock, ShieldAlert, Check, ArrowRight } from 'lucide-react';
+import { X, User, Mail, Lock, ArrowRight } from 'lucide-react';
+import { loadFirebase } from '../lib/firebaseLoader';
 
 export default function AuthModal() {
   const { 
     isAuthModalOpen, 
     setIsAuthModalOpen, 
-    user, 
     setUser, 
     navigateToTab, 
-    theme 
+    theme,
+    authRole,
+    setAuthRole
   } = useStore();
 
   const [mode, setMode] = useState('login'); // 'login' or 'register'
-  const [role, setRole] = useState('customer'); // 'customer' or 'admin'
+  const [role, setRole] = useState(authRole);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const isDark = theme === 'dark';
 
+  useEffect(() => {
+    if (isAuthModalOpen) {
+      setRole(authRole);
+      setMode('login');
+      setErrorMessage('');
+    }
+  }, [authRole, isAuthModalOpen]);
+
   if (!isAuthModalOpen) return null;
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const finishSignIn = async (firebaseUser, firebase) => {
+    const userRole = await firebase.getFirebaseUserRole(firebaseUser);
+    if (role === 'admin' && userRole !== 'admin') {
+      await firebase.signOut(firebase.firebaseAuth);
+      setErrorMessage('This account does not have administrator access.');
+      return;
+    }
+
     setUser({
-      name: name || (role === 'admin' ? 'Muscle Avenue Admin' : 'Customer Athlete'),
-      email: email || (role === 'admin' ? 'admin@muscleavenue.lk' : 'customer@gmail.com'),
-      phone: phone || '0771234567',
-      role: role,
-      isLoggedIn: true
+      name: firebaseUser.displayName || firebaseUser.email || 'Customer Athlete',
+      email: firebaseUser.email || '',
+      phone: firebaseUser.phoneNumber || (mode === 'register' ? phone : ''),
+      role: userRole,
+      isLoggedIn: true,
+      firebaseUid: firebaseUser.uid,
+      firebaseAuthenticated: true
     });
     setIsAuthModalOpen(false);
+    setPassword('');
+    setErrorMessage('');
+    if (userRole === 'admin') navigateToTab('admin');
+  };
 
-    if (role === 'admin') {
-      navigateToTab('admin');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const firebase = await loadFirebase();
+      if (!firebase.firebaseAuth) {
+        setErrorMessage(firebase.getFirebaseConfigurationError());
+        return;
+      }
+
+      if (mode === 'register') {
+        if (role !== 'customer') {
+          setErrorMessage('Only customer accounts can be created here.');
+          return;
+        }
+        const credential = await firebase.createUserWithEmailAndPassword(firebase.firebaseAuth, email.trim(), password);
+        await firebase.updateProfile(credential.user, { displayName: name.trim() });
+        await finishSignIn(credential.user, firebase);
+      } else {
+        const credential = await firebase.signInWithEmailAndPassword(firebase.firebaseAuth, email.trim(), password);
+        await finishSignIn(credential.user, firebase);
+      }
+    } catch (error) {
+      const firebase = await loadFirebase();
+      setErrorMessage(firebase.getFirebaseAuthError(error));
     }
   };
 
-  const handleQuickDemoLogin = (selectedRole) => {
-    if (selectedRole === 'admin') {
-      setUser({
-        name: 'Chief Inventory Admin',
-        email: 'admin@muscleavenue.lk',
-        phone: '0761709607',
-        role: 'admin',
-        isLoggedIn: true
-      });
-      setIsAuthModalOpen(false);
-      navigateToTab('admin');
-    } else {
-      setUser({
-        name: 'Kasun Jayawardena',
-        email: 'kasun.gym@gmail.com',
-        phone: '0772345678',
-        role: 'customer',
-        isLoggedIn: true
-      });
-      setIsAuthModalOpen(false);
+  const handleGoogleSignIn = async () => {
+    try {
+      const firebase = await loadFirebase();
+      if (!firebase.firebaseAuth) {
+        setErrorMessage(firebase.getFirebaseConfigurationError());
+        return;
+      }
+      const credential = await firebase.signInWithPopup(firebase.firebaseAuth, firebase.googleProvider);
+      await finishSignIn(credential.user, firebase);
+    } catch (error) {
+      const firebase = await loadFirebase();
+      setErrorMessage(firebase.getFirebaseAuthError(error));
     }
   };
 
@@ -80,7 +117,7 @@ export default function AuthModal() {
             </div>
             <div>
               <h3 className="font-display font-black text-lg text-slate-900 dark:text-white">
-                {mode === 'login' ? 'Account Login' : 'Create New Account'}
+                {role === 'admin' ? 'Admin Sign In' : mode === 'login' ? 'Account Login' : 'Create Customer Account'}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Muscle Avenue Supplements Portal
@@ -96,66 +133,8 @@ export default function AuthModal() {
           </button>
         </div>
 
-        {/* Tab switcher: Login vs Register */}
-        <div className="grid grid-cols-2 p-2 bg-slate-100 dark:bg-slate-950/40 border-b border-slate-200 dark:border-slate-800/60 text-xs font-bold">
-          <button
-            onClick={() => setMode('login')}
-            className={`py-2 rounded-xl transition-all ${
-              mode === 'login'
-                ? 'bg-sky-500 text-slate-950 shadow-md'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white'
-            }`}
-          >
-            Sign In
-          </button>
-          <button
-            onClick={() => setMode('register')}
-            className={`py-2 rounded-xl transition-all ${
-              mode === 'register'
-                ? 'bg-sky-500 text-slate-950 shadow-md'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white'
-            }`}
-          >
-            Create Account
-          </button>
-        </div>
-
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          
-          {/* Select Account Role */}
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
-              Select Role:
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setRole('customer')}
-                className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition-all ${
-                  role === 'customer'
-                    ? 'bg-sky-500/15 border-sky-500 text-sky-600 dark:text-sky-400 font-extrabold shadow-sm'
-                    : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
-                }`}
-              >
-                <User className="w-3.5 h-3.5" />
-                <span>Customer</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setRole('admin')}
-                className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition-all ${
-                  role === 'admin'
-                    ? 'bg-red-500/15 border-red-500 text-red-600 dark:text-red-400 font-extrabold shadow-sm'
-                    : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
-                }`}
-              >
-                <ShieldAlert className="w-3.5 h-3.5" />
-                <span>Admin</span>
-              </button>
-            </div>
-          </div>
 
           {/* Registration Fields */}
           {mode === 'register' && (
@@ -213,6 +192,7 @@ export default function AuthModal() {
             <input
               type="password"
               required
+              minLength={mode === 'register' ? 6 : undefined}
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -220,41 +200,59 @@ export default function AuthModal() {
             />
           </div>
 
+          {errorMessage && (
+            <p role="alert" className="text-xs font-bold text-red-600 dark:text-red-400">
+              {errorMessage}
+            </p>
+          )}
+
           {/* Submit Button */}
           <button
             type="submit"
             className="w-full py-3 rounded-xl font-display font-black text-xs uppercase tracking-wider bg-sky-500 hover:bg-sky-600 text-slate-950 shadow-md transition-all flex items-center justify-center gap-1.5"
           >
-            <span>{mode === 'login' ? `Login as ${role}` : `Create ${role} Account`}</span>
+            <span>{mode === 'login' ? `Sign in${role === 'admin' ? ' as admin' : ''}` : 'Create Customer Account'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
 
-          {/* Quick Demo Login Shortcut */}
-          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 text-center">
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 block mb-2 font-medium">
-              Demo Instant Login:
-            </span>
-            <div className="flex gap-2">
+          {role === 'customer' && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+                <span>or</span>
+                <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+              </div>
               <button
                 type="button"
-                onClick={() => handleQuickDemoLogin('customer')}
-                className="flex-1 py-2 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition-colors"
+                onClick={handleGoogleSignIn}
+                className="w-full py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors"
               >
-                👤 Customer Demo
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickDemoLogin('admin')}
-                className="flex-1 py-2 px-2 rounded-lg bg-red-100 hover:bg-red-200 dark:bg-red-950/60 dark:hover:bg-red-900/60 text-red-700 dark:text-red-300 text-xs font-semibold border border-red-200 dark:border-red-800/60 transition-colors"
-              >
-                🛡️ Admin Demo
+                <span className="font-display font-black text-base text-blue-600" aria-hidden="true">G</span>
+                Continue with Google
               </button>
             </div>
-          </div>
+          )}
+
+          {role === 'customer' && (
+            <p className="text-center text-xs text-slate-600 dark:text-slate-400">
+              {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setMode(mode === 'login' ? 'register' : 'login');
+                  setRole('customer');
+                  setAuthRole('customer');
+                  setErrorMessage('');
+                }}
+                className="font-bold text-sky-600 dark:text-sky-400 hover:underline"
+              >
+                {mode === 'login' ? 'Create customer account' : 'Sign in'}
+              </button>
+            </p>
+          )}
 
         </form>
       </div>
     </div>
   );
 }
-

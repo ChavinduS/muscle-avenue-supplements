@@ -23,7 +23,7 @@
   - `Get Support`: Dedicated contact information and message inquiry form.
 - **Search Bar**: Instant real-time filtering across titles, brands, and categories.
 - **Cart Button**: Live count badge and slide-out drawer.
-- **User Account & Role Switcher**: Quick toggle between **Customer** and **Admin** roles.
+- **User Account**: Firebase-backed customer sign-in and customer-only account registration.
 
 ### 3. Burger Menu Drawer
 - Full slide-out navigation menu.
@@ -97,10 +97,19 @@
 ### 9. Dual User Roles (Customer & Admin)
 - **Customer Role**: Browse, Add to Cart, Place Orders, Place Pre-orders, View Tracking Timeline.
 - **Admin Role**:
+  - Firebase Authentication with admin access granted by a trusted server-side custom claim.
   - Admin Dashboard with sales volume, total orders, and low-stock alerts.
   - **Add New Product**: Name, Brand, Category, Price, Offer Price, Stock, Weight, Flavors, Image.
   - **Edit & Delete Products**: Live stock increment/decrement, remove items.
   - **Order Timeline Management**: Change customer order status (`Processing` -> `Packed` -> `Shipped` -> `Delivered`).
+
+### Firebase Authentication Setup
+- Copy `.env.example` to `.env.local` for local development and set the Firebase web app values.
+- Add the same `VITE_FIREBASE_*` values in Vercel Project Settings > Environment Variables, then redeploy.
+- Enable **Email/Password** and **Google** sign-in in Firebase Authentication.
+- Add the deployed Vercel domain to Firebase Authentication's authorized domains.
+- Customer email/password accounts and Google sign-in are created and authenticated by Firebase.
+- Admins must be provisioned separately and receive the `admin: true` custom claim through a trusted Firebase Admin SDK environment. Never set admin claims from browser code or expose service-account credentials in Vercel client variables.
 
 ---
 

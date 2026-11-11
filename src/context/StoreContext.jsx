@@ -1,5 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { INITIAL_PRODUCTS, INITIAL_ORDERS, STORE_INFO } from '../data/supplementsData';
+import { loadFirebase } from '../lib/firebaseLoader';
+
+const LEGACY_PRODUCT_IMAGES = {
+  'prod-cr-1': 'https://images.unsplash.com/photo-1593095948071-474c5cc2989d?auto=format&fit=crop&w=700&q=80',
+  'prod-cr-2': 'https://images.unsplash.com/photo-1579722820308-d74e571900a9?auto=format&fit=crop&w=700&q=80'
+};
 
 const StoreContext = createContext();
 
@@ -29,7 +35,18 @@ export function StoreProvider({ children }) {
   const [products, setProducts] = useState(() => {
     const saved = localStorage.getItem('ma_products_v2');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+      try {
+        const savedProducts = JSON.parse(saved);
+        if (Array.isArray(savedProducts)) {
+          return savedProducts.map(product => {
+            const initialProduct = INITIAL_PRODUCTS.find(initial => initial.id === product.id);
+            return initialProduct && product.image === LEGACY_PRODUCT_IMAGES[product.id]
+              ? { ...product, image: initialProduct.image }
+              : product;
+          });
+        }
+        return savedProducts;
+      } catch (e) { console.error(e); }
     }
     return INITIAL_PRODUCTS;
   });
@@ -68,7 +85,10 @@ export function StoreProvider({ children }) {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('ma_user');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+      try {
+        const savedUser = JSON.parse(saved);
+        if (savedUser.role !== 'admin') return savedUser;
+      } catch (e) { console.error(e); }
     }
     return {
       name: 'Guest Athlete',
@@ -80,8 +100,63 @@ export function StoreProvider({ children }) {
   });
 
   useEffect(() => {
+    if (user.role === 'admin') {
+      localStorage.removeItem('ma_user');
+      return;
+    }
     localStorage.setItem('ma_user', JSON.stringify(user));
   }, [user]);
+
+  useEffect(() => {
+    let active = true;
+    let unsubscribe;
+
+    loadFirebase()
+      .then(({ firebaseAuth, getFirebaseUserRole, onAuthStateChanged }) => {
+        if (!active || !firebaseAuth) return;
+        unsubscribe = onAuthStateChanged(firebaseAuth, firebaseUser => {
+          if (!firebaseUser) {
+            setUser(current => current.firebaseAuthenticated ? {
+              name: 'Guest Athlete',
+              email: 'athlete@gmail.com',
+              phone: '0771234567',
+              role: 'customer',
+              isLoggedIn: true
+            } : current);
+            return;
+          }
+
+          getFirebaseUserRole(firebaseUser)
+            .then(role => setUser(current => ({
+              name: firebaseUser.displayName || firebaseUser.email || 'Customer Athlete',
+              email: firebaseUser.email || '',
+              phone: firebaseUser.phoneNumber || (current.firebaseUid === firebaseUser.uid ? current.phone : ''),
+              role,
+              isLoggedIn: true,
+              firebaseUid: firebaseUser.uid,
+              firebaseAuthenticated: true
+            })))
+            .catch(error => {
+              console.error('Could not verify Firebase user role:', error);
+              setUser({
+                name: firebaseUser.displayName || firebaseUser.email || 'Customer Athlete',
+                email: firebaseUser.email || '',
+                phone: firebaseUser.phoneNumber || '',
+                role: 'customer',
+                isLoggedIn: true,
+                firebaseUid: firebaseUser.uid,
+                firebaseAuthenticated: true
+              });
+            });
+        });
+      })
+      .catch(error => console.error('Could not initialize Firebase Authentication:', error));
+
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
+  }, []);
 
   // Navigation state
   const [activeTab, setActiveTab] = useState('home'); // 'home', 'supplements', 'category', 'offers', 'about', 'contact', 'admin', 'account'
@@ -91,6 +166,7 @@ export function StoreProvider({ children }) {
   // Modals & Drawers
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authRole, setAuthRole] = useState('customer');
   const [isOrderTrackerOpen, setIsOrderTrackerOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isBurgerOpen, setIsBurgerOpen] = useState(false);
@@ -174,7 +250,9 @@ export function StoreProvider({ children }) {
       prev.map(item => {
         if (item.id === id) {
           const price = Number(updatedFields.price ?? item.price);
-          const offerPrice = Number(updatedFields.offerPrice ?? item.offerPrice ?? price);
+          const offerPrice = updatedFields.offerPrice === ''
+            ? price
+            : Number(updatedFields.offerPrice ?? item.offerPrice ?? price);
           const discountPercent = Math.round(((price - offerPrice) / price) * 100) || 0;
           return {
             ...item,
@@ -283,11 +361,15 @@ export function StoreProvider({ children }) {
   };
 
   // Switch role between customer and admin
-  const switchRole = (role) => {
-    setUser(prev => ({
-      ...prev,
-      role
-    }));
+  const switchRole = async (role) => {
+    if (role !== 'customer') return;
+    if (user.firebaseAuthenticated) {
+      const { firebaseAuth, signOut } = await loadFirebase();
+      if (!firebaseAuth) throw new Error('Firebase Authentication is not configured.');
+      await signOut(firebaseAuth);
+      return;
+    }
+    setUser(prev => ({ ...prev, role: 'customer' }));
   };
 
   // Navigation helpers
@@ -339,6 +421,8 @@ export function StoreProvider({ children }) {
         setIsCartOpen,
         isAuthModalOpen,
         setIsAuthModalOpen,
+        authRole,
+        setAuthRole,
         isOrderTrackerOpen,
         setIsOrderTrackerOpen,
         isCheckoutOpen,

@@ -76,13 +76,17 @@ export default function ProductCard({ product }) {
       </div>
 
       {/* Product Image */}
-      <div className="relative w-full aspect-square bg-slate-950/20 overflow-hidden flex items-center justify-center p-4">
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-        />
+      <div className="relative w-full aspect-square bg-white overflow-hidden flex items-center justify-center p-4">
+        {product.image ? (
+          <img
+            src={product.image}
+            alt={product.name}
+            className="w-full h-full object-contain rounded-xl p-2 transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+        ) : (
+          <Package className="w-16 h-16 text-slate-300" aria-label="No product image" />
+        )}
 
         {/* Quick View Overlay Button */}
         <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
@@ -216,4 +220,3 @@ export default function ProductCard({ product }) {
     </div>
   );
 }
-

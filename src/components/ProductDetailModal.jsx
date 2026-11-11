@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
-import { X, Star, ShoppingCart, Clock, ShieldCheck, Truck, Store, Zap, Check, ArrowRight } from 'lucide-react';
+import { X, Star, ShoppingCart, Clock, ShieldCheck, Truck, Store, Zap, Check, ArrowRight, Package } from 'lucide-react';
 
 export default function ProductDetailModal() {
   const { selectedProduct, setSelectedProduct, addToCart, theme, navigateToCategory } = useStore();
@@ -48,12 +48,16 @@ export default function ProductDetailModal() {
         <div className="grid grid-cols-1 md:grid-cols-2">
           {/* Left Column: Image & Badges */}
           <div className="p-6 md:p-8 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950/30 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800">
-            <div className="relative w-full aspect-square max-w-sm rounded-2xl overflow-hidden shadow-inner">
-              <img
-                src={selectedProduct.image}
-                alt={selectedProduct.name}
-                className="w-full h-full object-cover"
-              />
+            <div className="relative w-full aspect-square max-w-sm rounded-2xl overflow-hidden shadow-inner bg-white">
+              {selectedProduct.image ? (
+                <img
+                  src={selectedProduct.image}
+                  alt={selectedProduct.name}
+                  className="w-full h-full object-contain p-4"
+                />
+              ) : (
+                <Package className="absolute inset-0 m-auto w-20 h-20 text-slate-300" aria-label="No product image" />
+              )}
               {selectedProduct.discountPercent > 0 && (
                 <span className="absolute top-3 left-3 px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider bg-red-600 text-white shadow-md">
                   {selectedProduct.discountPercent}% OFF
@@ -242,6 +246,4 @@ export default function ProductDetailModal() {
     </div>
   );
 }
-
-
 

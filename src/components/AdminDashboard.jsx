@@ -5,6 +5,7 @@ import {
   Plus, 
   Trash2, 
   Edit, 
+  ImagePlus,
   Package, 
   ShoppingBag, 
   TrendingUp, 
@@ -35,9 +36,10 @@ export default function AdminDashboard() {
 
   const [activeAdminTab, setActiveAdminTab] = useState('products'); // 'products' or 'orders'
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingProductId, setEditingProductId] = useState(null);
+  const [imageError, setImageError] = useState('');
 
-  // New product form state
-  const [formData, setFormData] = useState({
+  const emptyFormData = {
     name: '',
     brand: 'Applied Nutrition',
     category: 'whey-proteins',
@@ -46,12 +48,35 @@ export default function AdminDashboard() {
     stock: '15',
     weight: '2kg / 4.4 lbs',
     flavors: 'Chocolate, Vanilla, Strawberry',
-    image: 'https://images.unsplash.com/photo-1593095948071-474c5cc2989d?auto=format&fit=crop&w=700&q=80',
+    image: '',
     description: '100% genuine imported supplement. Lab certified for maximum muscle protein synthesis.',
     isPreOrder: false,
     isBestSeller: true,
     isNewArrival: true
-  });
+  };
+  const [formData, setFormData] = useState(emptyFormData);
+
+  const openAddModal = () => {
+    setEditingProductId(null);
+    setFormData({ ...emptyFormData });
+    setImageError('');
+    setIsAddModalOpen(true);
+  };
+
+  const openEditModal = (product) => {
+    setEditingProductId(product.id);
+    setFormData({
+      ...emptyFormData,
+      ...product,
+      price: String(product.price ?? ''),
+      offerPrice: product.offerPrice ? String(product.offerPrice) : '',
+      stock: String(product.stock ?? 0),
+      flavors: Array.isArray(product.flavors) ? product.flavors.join(', ') : '',
+      image: product.image || ''
+    });
+    setImageError('');
+    setIsAddModalOpen(true);
+  };
 
   // Calculate metrics
   const totalProducts = products.length;
@@ -59,7 +84,7 @@ export default function AdminDashboard() {
   const totalOrders = orders.length;
   const totalRevenue = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
-  const handleAddSubmit = (e) => {
+  const handleProductSubmit = (e) => {
     e.preventDefault();
     if (!formData.name || !formData.price) {
       alert('Please fill product name and price.');
@@ -70,32 +95,72 @@ export default function AdminDashboard() {
       ? formData.flavors.split(',').map(f => f.trim()).filter(Boolean)
       : ['Standard'];
 
-    addProduct({
+    const productData = {
       ...formData,
       flavors: flavorsArray,
-      supplementFacts: {
-        servingSize: '1 Serving',
-        servingsPerContainer: 30,
-        qualityCertification: '100% Genuine Lab Certified'
-      }
-    });
+      supplementFacts: editingProductId
+        ? products.find(product => product.id === editingProductId)?.supplementFacts
+        : {
+            servingSize: '1 Serving',
+            servingsPerContainer: 30,
+            qualityCertification: '100% Genuine Lab Certified'
+          }
+    };
 
+    if (editingProductId) {
+      updateProduct(editingProductId, productData);
+    } else {
+      addProduct(productData);
+    }
     setIsAddModalOpen(false);
-    setFormData({
-      name: '',
-      brand: 'Applied Nutrition',
-      category: 'whey-proteins',
-      price: '',
-      offerPrice: '',
-      stock: '15',
-      weight: '2kg / 4.4 lbs',
-      flavors: 'Chocolate, Vanilla, Strawberry',
-      image: 'https://images.unsplash.com/photo-1593095948071-474c5cc2989d?auto=format&fit=crop&w=700&q=80',
-      description: '100% genuine imported supplement. Lab certified for maximum muscle protein synthesis.',
-      isPreOrder: false,
-      isBestSeller: false,
-      isNewArrival: false
-    });
+    setEditingProductId(null);
+    setFormData({ ...emptyFormData });
+    setImageError('');
+  };
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setImageError('Choose an image file.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setImageError('Choose an image smaller than 10 MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onerror = () => setImageError('Could not read this image. Please try another file.');
+    reader.onload = () => {
+      const sourceImage = new Image();
+      sourceImage.onerror = () => setImageError('Could not open this image. Please try another file.');
+      sourceImage.onload = () => {
+        const maxDimension = 900;
+        const scale = Math.min(1, maxDimension / Math.max(sourceImage.width, sourceImage.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(sourceImage.width * scale));
+        canvas.height = Math.max(1, Math.round(sourceImage.height * scale));
+        const context = canvas.getContext('2d');
+        if (!context) {
+          setImageError('Your browser could not process this image.');
+          return;
+        }
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(sourceImage, 0, 0, canvas.width, canvas.height);
+        const image = canvas.toDataURL('image/jpeg', 0.82);
+        if (image.length > 900_000) {
+          setImageError('This image is still too large after compression. Choose a smaller image.');
+          return;
+        }
+        setFormData(previous => ({ ...previous, image }));
+        setImageError('');
+      };
+      sourceImage.src = reader.result;
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -127,7 +192,7 @@ export default function AdminDashboard() {
           </button>
 
           <button
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={openAddModal}
             className="px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-slate-950 font-display font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-sky-500/20 transition-all"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
@@ -230,11 +295,13 @@ export default function AdminDashboard() {
                     {/* Product item */}
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
-                        <img
-                          src={p.image}
-                          alt={p.name}
-                          className="w-10 h-10 rounded-lg object-cover bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
-                        />
+                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-white border border-slate-200 dark:border-slate-800 flex items-center justify-center">
+                          {p.image ? (
+                            <img src={p.image} alt={p.name} className="w-full h-full object-contain p-0.5" />
+                          ) : (
+                            <Package className="w-5 h-5 text-slate-300" aria-label="No product image" />
+                          )}
+                        </div>
                         <div>
                           <div className="font-bold text-slate-900 dark:text-slate-200 line-clamp-1 max-w-xs">{p.name}</div>
                           <div className="text-[10px] text-slate-500 dark:text-slate-400">{p.weight}</div>
@@ -300,17 +367,28 @@ export default function AdminDashboard() {
 
                     {/* Actions */}
                     <td className="py-3 px-4 text-right">
-                      <button
-                        onClick={() => {
-                          if (confirm(`Are you sure you want to remove "${p.name}"?`)) {
-                            deleteProduct(p.id);
-                          }
-                        }}
-                        className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white transition-colors"
-                        title="Delete Product"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => openEditModal(p)}
+                          className="p-2 rounded-lg bg-sky-500/10 hover:bg-sky-500 text-sky-600 hover:text-white transition-colors"
+                          title="Edit Product"
+                          aria-label={`Edit ${p.name}`}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Are you sure you want to remove "${p.name}"?`)) {
+                              deleteProduct(p.id);
+                            }
+                          }}
+                          className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white transition-colors"
+                          title="Delete Product"
+                          aria-label={`Delete ${p.name}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -394,23 +472,28 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Add Product Modal */}
+      {/* Add / Edit Product Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
           <div className="relative w-full max-w-xl rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white p-6 md:p-8 shadow-2xl my-6">
             <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-5">
               <h3 className="font-display font-black text-xl text-slate-900 dark:text-white">
-                Add New Supplement
+                {editingProductId ? 'Edit Supplement' : 'Add New Supplement'}
               </h3>
               <button
-                onClick={() => setIsAddModalOpen(false)}
+                onClick={() => {
+                  setIsAddModalOpen(false);
+                  setEditingProductId(null);
+                  setImageError('');
+                }}
+                aria-label="Close product form"
                 className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-sky-500 hover:text-slate-950 flex items-center justify-center transition-colors text-slate-600 dark:text-slate-300"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleAddSubmit} className="space-y-4 text-xs">
+            <form onSubmit={handleProductSubmit} className="space-y-4 text-xs">
               <div>
                 <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">Product Title *</label>
                 <input
@@ -431,6 +514,9 @@ export default function AdminDashboard() {
                     onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white outline-none"
                   >
+                    {formData.brand && formData.brand !== 'Muscle Avenue' && !BRANDS.some(b => b.name === formData.brand) && (
+                      <option value={formData.brand}>{formData.brand}</option>
+                    )}
                     {BRANDS.map(b => (
                       <option key={b.name} value={b.name}>{b.name}</option>
                     ))}
@@ -514,14 +600,48 @@ export default function AdminDashboard() {
               </div>
 
               <div>
-                <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">Image URL</label>
-                <input
-                  type="url"
-                  placeholder="https://..."
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none"
-                />
+                <label className="block text-slate-700 dark:text-slate-300 font-bold mb-2">Product Image</label>
+                <div className="grid grid-cols-[112px_1fr] gap-3 items-start">
+                  <div className="aspect-square w-28 rounded-xl overflow-hidden border border-slate-300 dark:border-slate-700 bg-white flex items-center justify-center">
+                    {formData.image ? (
+                      <img src={formData.image} alt="Product preview" className="w-full h-full object-contain p-2" />
+                    ) : (
+                      <span className="text-center text-[10px] text-slate-400 px-2">No image selected</span>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-sky-500/10 text-sky-700 dark:text-sky-300 font-bold cursor-pointer hover:bg-sky-500/20">
+                      <ImagePlus className="w-4 h-4" />
+                      Choose image from device
+                      <input type="file" accept="image/*" onChange={handleImageUpload} className="sr-only" />
+                    </label>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">Images are compressed and saved in this browser.</p>
+                    <input
+                      type="text"
+                      inputMode="url"
+                      placeholder="Or paste an image URL (https://...)"
+                      value={formData.image.startsWith('data:') ? '' : formData.image}
+                      onChange={(e) => {
+                        setFormData({ ...formData, image: e.target.value });
+                        setImageError('');
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none"
+                    />
+                    {formData.image && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, image: '' });
+                          setImageError('');
+                        }}
+                        className="text-red-600 dark:text-red-400 font-bold hover:underline"
+                      >
+                        Remove image
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {imageError && <p role="alert" className="mt-2 text-red-600 dark:text-red-400 font-semibold">{imageError}</p>}
               </div>
 
               <div>
@@ -571,7 +691,7 @@ export default function AdminDashboard() {
                 type="submit"
                 className="w-full mt-4 py-3 rounded-xl font-display font-black text-xs uppercase tracking-wider bg-sky-500 hover:bg-sky-600 text-slate-950 transition-all shadow-md"
               >
-                Add Product to Store
+                {editingProductId ? 'Save Product Changes' : 'Add Product to Store'}
               </button>
             </form>
           </div>
@@ -580,4 +700,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-

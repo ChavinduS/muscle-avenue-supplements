@@ -11,7 +11,8 @@ import {
   Store, 
   ShieldCheck, 
   Tag, 
-  Clock 
+  Clock,
+  Package
 } from 'lucide-react';
 
 export default function CartDrawer() {
@@ -141,12 +142,16 @@ export default function CartDrawer() {
                 }`}
               >
                 {/* Thumbnail */}
-                <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-950/20 shrink-0 relative">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-full h-full object-cover"
-                  />
+                <div className="w-20 h-20 rounded-xl overflow-hidden bg-white shrink-0 relative">
+                  {item.image ? (
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-full h-full object-contain p-1"
+                    />
+                  ) : (
+                    <Package className="absolute inset-0 m-auto w-8 h-8 text-slate-300" aria-label="No product image" />
+                  )}
                   {item.isPreOrder && (
                     <span className="absolute bottom-0 inset-x-0 bg-purple-700/90 text-white text-[9px] font-black uppercase text-center py-0.5">
                       Pre-Order
@@ -246,6 +251,4 @@ export default function CartDrawer() {
     </div>
   );
 }
-
-
 

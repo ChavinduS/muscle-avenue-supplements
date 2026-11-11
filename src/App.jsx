@@ -21,7 +21,7 @@ import ContactUsPage from './pages/ContactUsPage';
 import AdminDashboard from './components/AdminDashboard';
 
 export default function App() {
-  const { activeTab, theme } = useStore();
+  const { activeTab, theme, user } = useStore();
 
   const renderActivePage = () => {
     switch (activeTab) {
@@ -38,7 +38,7 @@ export default function App() {
       case 'contact':
         return <ContactUsPage />;
       case 'admin':
-        return <AdminDashboard />;
+        return user.role === 'admin' ? <AdminDashboard /> : <HomePage />;
       default:
         return <HomePage />;
     }
